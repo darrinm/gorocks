@@ -65,7 +65,6 @@ func run() {
 		spritesheetImage: treesheetImage, frames: treeFrames})
 
 	game := makeGame(&stage)
-	game.reset() // TODO: WTF? why doesn't this work inside makeGame?
 
 	last := time.Now()
 
@@ -99,10 +98,13 @@ type Game struct {
 	numberOfShips    int
 }
 
-func makeGame(stage *Stage) Game {
+func makeGame(stage *Stage) *Game {
 	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfShips: 4}
-	//g.reset()
-	return g
+	g.reset()
+
+	// We must return a pointer to Game now that it has been initialized with Actors that reference it.
+	// Be aware that returning a local var actually returns a copy of it!
+	return &g
 }
 
 func (g *Game) reset() {
