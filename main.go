@@ -1,12 +1,12 @@
 // TODO:
 // - randomize seed each run
+// - ship deceleration
 // - ship respawn
 // - good collision detection
 // - sound effects
 // - saucers
 // - remaining lives indicator
 // - new graphics
-// - center score
 // - high score
 // - smaller = faster
 // - timing variability
@@ -353,10 +353,8 @@ func (s *Shot) Update(dt float64) {
 
 			// Create two smaller rocks.
 			if rock.generation < 3 {
-				var newRock *Rock
 				for i := 0; i < 2; i++ {
-					fmt.Println("makeRock", i)
-					newRock = makeRock(stage, rock.generation+1, rock)
+					newRock := makeRock(stage, rock.generation+1, rock)
 					newRock.position = actor.Position()
 				}
 			}
