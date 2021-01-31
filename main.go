@@ -1,6 +1,6 @@
 // TODO:
-// - remaining lives indicator
 // - game over
+// - extra ship every 10,000
 // - randomize seed each run
 // - ship deceleration
 // - good collision detection
@@ -108,13 +108,13 @@ func makeGame(stage *Stage) *Game {
 }
 
 func (g *Game) reset() {
-	fmt.Println("resetting game")
 	g.stage.reset()
 
 	g.ships = g.numberOfShips
 	g.score = 0
 
 	makeScore(g)
+	makeLives(g)
 	g.newLevel(1)
 }
 
@@ -137,7 +137,6 @@ func (g *Game) update(dt float64) {
 	if stage.findActorsByKind("ship") == nil {
 		g.ships--
 		if g.ships > 0 {
-			fmt.Println("spawning ship")
 			// TODO: wait for the area near the ship to be clear before spawning
 			makeShip(g)
 		} else {
@@ -193,6 +192,33 @@ func makeScore(game *Game) Score {
 func (a *Score) Update(dt float64) {
 	a.SetText(fmt.Sprintf("%v", a.game.score))
 	a.TextActor.Update(dt)
+}
+
+//
+
+type Lives struct {
+	BaseActor
+	game *Game
+}
+
+func makeLives(game *Game) Lives {
+	stage := game.stage
+	l := Lives{BaseActor: MakeBaseActor(stage, "lives"), game: game}
+	l.position = pixel.V(stage.bounds.Min.X+20, stage.bounds.Max.Y-25)
+
+	stage.addActor(&l)
+	return l
+}
+
+func (a *Lives) Draw() {
+	ships := a.stage.findActorsByKind("ship")
+	if len(ships) == 0 {
+		return
+	}
+	ship := ships[0].(*Ship)
+	for i := 0; i < a.game.ships; i++ {
+		ship.sprite.Draw(a.stage.win, a.Transform().Moved(pixel.V(float64(i)*30.0, 0)))
+	}
 }
 
 //
