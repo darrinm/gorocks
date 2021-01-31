@@ -10,6 +10,7 @@ import (
 
 //
 
+// Actor defines a 2D object that is updated and drawn by the Stage.
 type Actor interface {
 	// Meant to be overridden.
 	Update(dt float64)
@@ -21,7 +22,7 @@ type Actor interface {
 	// TODO: CollisionPolygon?
 
 	// Needed by Stage.
-	Id() int
+	ID() int
 	Kind() string
 	Position() pixel.Vec
 	Scale() float64
@@ -33,6 +34,8 @@ type Actor interface {
 	SetStage(staget *Stage)
 }
 
+// BaseActor implements Actor and is expected to embedded in richer Actors.
+// Its Update and Draw methods don't do anything.
 type BaseActor struct {
 	id               int
 	stage            *Stage
@@ -46,13 +49,13 @@ type BaseActor struct {
 	// layer int
 }
 
-var nextId = 1
+var nextID = 1
 
 func MakeBaseActor(stage *Stage, kind string) BaseActor {
-	id := nextId
-	nextId++
+	ID := nextID
+	nextID++
 	return BaseActor{
-		id:               id,
+		id:               ID,
 		stage:            stage,
 		scale:            1,
 		position:         pixel.ZV,
@@ -62,7 +65,7 @@ func MakeBaseActor(stage *Stage, kind string) BaseActor {
 		kind:             kind}
 }
 
-func (a *BaseActor) Id() int {
+func (a *BaseActor) ID() int {
 	return a.id
 }
 

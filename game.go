@@ -31,7 +31,7 @@ func makeGame(stage *Stage) *Game {
 }
 
 func (g *Game) reset() {
-	g.stage.reset()
+	g.stage.Reset()
 
 	g.ships = g.numberOfShips
 	g.score = 0
@@ -57,7 +57,7 @@ func (g *Game) update(dt float64) {
 	}
 
 	// If the ship has been destroyed spawn a new one until all are gone.
-	if stage.findActorsByKind("ship") == nil {
+	if stage.FindActorsByKind("ship") == nil {
 		g.ships--
 		if g.ships > 0 {
 			// TODO: wait for the area near the ship to be clear before spawning
@@ -69,15 +69,15 @@ func (g *Game) update(dt float64) {
 	}
 
 	// If all rocks have been destroyed go to the next level.
-	if stage.findActorsByKind("rock") == nil {
+	if stage.FindActorsByKind("rock") == nil {
 		g.newLevel(g.level + 1)
 	}
 
 	// Give every actor a chance to update.
-	stage.update(dt)
+	stage.Update(dt)
 
 	// Ask every actor to draw.
-	stage.draw()
+	stage.Draw()
 }
 
 //
@@ -113,7 +113,7 @@ func makeScore(game *Game) *Score {
 	s.scale = 2
 	s.horizontalAlignment = "center"
 
-	stage.addActor(&s)
+	stage.AddActor(&s)
 	return &s
 }
 
@@ -134,12 +134,12 @@ func makeLives(game *Game) *Lives {
 	l := Lives{BaseActor: MakeBaseActor(stage, "lives"), game: game}
 	l.position = pixel.V(stage.bounds.Min.X+20, stage.bounds.Max.Y-25)
 
-	stage.addActor(&l)
+	stage.AddActor(&l)
 	return &l
 }
 
 func (a *Lives) Draw() {
-	ships := a.stage.findActorsByKind("ship")
+	ships := a.stage.FindActorsByKind("ship")
 	if len(ships) == 0 {
 		return
 	}
@@ -170,7 +170,7 @@ func makeShip(game *Game) *Ship {
 		game:            game}
 	s.scale = 1.5
 
-	stage.addActor(&s)
+	stage.AddActor(&s)
 	return &s
 }
 
@@ -207,8 +207,8 @@ func (s *Ship) Update(dt float64) {
 	// Check for collision with a rock.
 	for _, actor := range stage.actors {
 		if actor.Kind() == "rock" && intersects(s, actor) {
-			stage.removeActor(s)
-			stage.removeActor(actor)
+			stage.RemoveActor(s)
+			stage.RemoveActor(actor)
 
 			// TODO: explode ship, rock
 			break
@@ -265,7 +265,7 @@ func makeRock(stage *Stage, generation int, parent *Rock) *Rock {
 	y := float64(rand.Intn(h) - h/2)
 	rock.position = pixel.V(x, y)
 
-	stage.addActor(&rock)
+	stage.AddActor(&rock)
 	return &rock
 }
 
@@ -283,7 +283,7 @@ func makeShot(position pixel.Vec, velocity pixel.Vec, stage *Stage, game *Game) 
 	s.velocity = velocity
 	s.scale = 0.4
 
-	stage.addActor(&s)
+	stage.AddActor(&s)
 	return &s
 }
 
@@ -293,7 +293,7 @@ func (s *Shot) Update(dt float64) {
 
 	s.timeout -= dt
 	if s.timeout < 0 {
-		stage.removeActor(s)
+		stage.RemoveActor(s)
 		return
 	}
 
@@ -307,8 +307,8 @@ func (s *Shot) Update(dt float64) {
 			points := []int{game.largeRockPoints, game.mediumRockPoints, game.smallRockPoints}
 			game.score += points[rock.generation-1]
 
-			stage.removeActor(s)
-			stage.removeActor(actor)
+			stage.RemoveActor(s)
+			stage.RemoveActor(actor)
 
 			// TODO: explode rock
 
