@@ -172,6 +172,11 @@ func (a *WrapAroundActor) Update(dt float64) {
 	wrapAroundVec(&a.position, &a.stage.bounds)
 }
 
+/* TODO: If striding the boundary draw on both sides.
+func (a *WrapAroundActor) Draw() {
+}
+*/
+
 //
 
 type Score struct {
@@ -179,14 +184,14 @@ type Score struct {
 	game *Game // TODO: retain game instead of stage in all actors?
 }
 
-func makeScore(game *Game) Score {
+func makeScore(game *Game) *Score {
 	stage := game.stage
 	s := Score{TextActor: MakeTextActor(pixel.V(0, stage.bounds.Max.Y-30), stage), game: game}
 	s.scale = 2
 	s.horizontalAlignment = "center"
 
 	stage.addActor(&s)
-	return s
+	return &s
 }
 
 func (a *Score) Update(dt float64) {
@@ -201,13 +206,13 @@ type Lives struct {
 	game *Game
 }
 
-func makeLives(game *Game) Lives {
+func makeLives(game *Game) *Lives {
 	stage := game.stage
 	l := Lives{BaseActor: MakeBaseActor(stage, "lives"), game: game}
 	l.position = pixel.V(stage.bounds.Min.X+20, stage.bounds.Max.Y-25)
 
 	stage.addActor(&l)
-	return l
+	return &l
 }
 
 func (a *Lives) Draw() {
@@ -232,7 +237,7 @@ type Ship struct {
 }
 
 // TODO: why is it oriented to the right?
-func makeShip(game *Game) Ship {
+func makeShip(game *Game) *Ship {
 	stage := game.stage
 	s := Ship{
 		WrapAroundActor: makeWrapAroundActor(8, stage, "ship"),
@@ -243,7 +248,7 @@ func makeShip(game *Game) Ship {
 	s.scale = 1.5
 
 	stage.addActor(&s)
-	return s
+	return &s
 }
 
 func (s *Ship) Update(dt float64) {
