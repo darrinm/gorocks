@@ -10,7 +10,6 @@
 // - high score
 // - smaller = faster
 // - timing variability
-// - firehose bug
 // - explosions
 
 package main

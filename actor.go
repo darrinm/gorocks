@@ -97,11 +97,11 @@ func (a *BaseActor) Transform() pixel.Matrix {
 }
 
 func (a *BaseActor) Bounds() pixel.Rect {
-	return pixel.Rect{a.position, a.position}
+	return pixel.Rect{Min: a.position, Max: a.position}
 }
 
 func (a *BaseActor) ScaledBounds() pixel.Rect {
-	return pixel.Rect{a.position, a.position}
+	return pixel.Rect{Min: a.position, Max: a.position}
 }
 
 func (a *BaseActor) Update(dt float64) {
