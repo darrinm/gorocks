@@ -1,11 +1,11 @@
 // TODO:
+// - remaining lives indicator
+// - game over
 // - randomize seed each run
 // - ship deceleration
-// - ship respawn
 // - good collision detection
 // - sound effects
 // - saucers
-// - remaining lives indicator
 // - new graphics
 // - high score
 // - smaller = faster
@@ -65,6 +65,7 @@ func run() {
 		spritesheetImage: treesheetImage, frames: treeFrames})
 
 	game := makeGame(&stage)
+	game.reset() // TODO: WTF? why doesn't this work inside makeGame?
 
 	last := time.Now()
 
@@ -99,20 +100,19 @@ type Game struct {
 }
 
 func makeGame(stage *Stage) Game {
-	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfShips: 3}
-	g.reset()
+	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfShips: 4}
+	//g.reset()
 	return g
 }
 
 func (g *Game) reset() {
+	fmt.Println("resetting game")
 	g.stage.reset()
 
-	// TODO: wait for the area near the ship to be clear before spawning
-	makeShip(g)
-
-	makeScore(g)
 	g.ships = g.numberOfShips
 	g.score = 0
+
+	makeScore(g)
 	g.newLevel(1)
 }
 
@@ -124,32 +124,36 @@ func (g *Game) newLevel(level int) {
 }
 
 func (g *Game) update(dt float64) {
+	stage := g.stage
+
 	// Press r to reset the game.
-	if g.stage.win.Pressed(pixelgl.KeyR) {
+	if stage.win.Pressed(pixelgl.KeyR) {
 		g.reset()
 	}
 
-	// TODO: If the ship has been destroyed start over.
-
-	// If all the rocks have been destroyed go to the next level.
-	// TODO: if stage.findActorsByKind("rock") == nil
-	noRocks := true
-	for _, actor := range g.stage.actors {
-		if actor.Kind() == "rock" {
-			noRocks = false
-			break
+	// If the ship has been destroyed spawn a new one until all are gone.
+	if stage.findActorsByKind("ship") == nil {
+		g.ships--
+		if g.ships > 0 {
+			fmt.Println("spawning ship")
+			// TODO: wait for the area near the ship to be clear before spawning
+			makeShip(g)
+		} else {
+			// TODO: game over
+			g.reset()
 		}
 	}
 
-	if noRocks {
+	// If all rocks have been destroyed go to the next level.
+	if stage.findActorsByKind("rock") == nil {
 		g.newLevel(g.level + 1)
 	}
 
 	// Give every actor a chance to update.
-	g.stage.update(dt)
+	stage.update(dt)
 
 	// Ask every actor to draw.
-	g.stage.draw()
+	stage.draw()
 }
 
 //
@@ -185,7 +189,7 @@ func makeScore(game *Game) Score {
 }
 
 func (a *Score) Update(dt float64) {
-	a.SetText(fmt.Sprintf("%d", a.game.score))
+	a.SetText(fmt.Sprintf("%v", a.game.score))
 	a.TextActor.Update(dt)
 }
 
@@ -206,8 +210,8 @@ func makeShip(game *Game) Ship {
 		WrapAroundActor: makeWrapAroundActor(8, stage, "ship"),
 		acceleration:    10.0,
 		rotateSpeed:     5.0,
-		fireCooldown:    0.0}
-	s.game = game
+		fireCooldown:    0.0,
+		game:            game}
 	s.scale = 1.5
 
 	stage.addActor(&s)
@@ -318,17 +322,17 @@ type Shot struct {
 }
 
 func makeShot(position pixel.Vec, velocity pixel.Vec, stage *Stage, game *Game) *Shot {
-	s := Shot{WrapAroundActor: makeWrapAroundActor(6, stage, "shot"), timeout: 1.5}
+	s := Shot{WrapAroundActor: makeWrapAroundActor(6, stage, "shot"), timeout: 1.5, game: game}
 	s.position = position
 	s.velocity = velocity
 	s.scale = 0.4
-	s.game = game
 
 	stage.addActor(&s)
 	return &s
 }
 
 func (s *Shot) Update(dt float64) {
+	game := s.game
 	stage := s.stage
 
 	s.timeout -= dt
@@ -337,17 +341,18 @@ func (s *Shot) Update(dt float64) {
 		return
 	}
 
+	s.WrapAroundActor.Update(dt)
+
 	// Check for collision with a rock.
 	actors := stage.actors
 	for _, actor := range actors {
-		if intersects(actor, s) && actor.Kind() == "rock" {
+		if actor.Kind() == "rock" && intersects(actor, s) {
+			rock := actor.(*Rock)
+			points := []int{game.largeRockPoints, game.mediumRockPoints, game.smallRockPoints}
+			game.score += points[rock.generation-1]
+
 			stage.removeActor(s)
 			stage.removeActor(actor)
-
-			rock := actor.(*Rock)
-
-			points := []int{s.game.largeRockPoints, s.game.mediumRockPoints, s.game.smallRockPoints}
-			s.game.score += points[rock.generation-1]
 
 			// TODO: explode rock
 
@@ -361,8 +366,6 @@ func (s *Shot) Update(dt float64) {
 			break
 		}
 	}
-
-	s.BaseActor.Update(dt)
 }
 
 func wrapAroundVec(vec *pixel.Vec, bounds *pixel.Rect) {

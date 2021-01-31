@@ -54,6 +54,19 @@ func (s *Stage) removeActor(actor Actor) {
 	panic(fmt.Sprintf("Actor not found. %#v", actor))
 }
 
+func (s *Stage) findActorsByKind(kind string) []Actor {
+	actors := make([]Actor, 0)
+	for _, actor := range s.actors {
+		if actor.Kind() == kind {
+			actors = append(actors, actor)
+		}
+	}
+	if len(actors) == 0 {
+		return nil
+	}
+	return actors
+}
+
 func (s *Stage) update(dt float64) {
 	// Make a copy to protect from Update mutations.
 	actors := make([]Actor, len(s.actors))
