@@ -35,8 +35,8 @@ func (s *Stage) reset() {
 
 func (s *Stage) addActor(actor Actor) {
 	for _, a := range s.actors {
-		if actor == a {
-			panic(fmt.Sprintf("Actor has already been added"))
+		if actor.Id() == a.Id() {
+			panic(fmt.Sprintf("Actor has already been added. %#v", actor))
 		}
 	}
 	s.actors = append(s.actors, actor)
@@ -44,21 +44,22 @@ func (s *Stage) addActor(actor Actor) {
 
 func (s *Stage) removeActor(actor Actor) {
 	for i, actorT := range s.actors {
-		if actorT == actor {
-			actor.(*BaseActor).stage = nil
+		// Compare pointers, not values.
+		if actorT.Id() == actor.Id() {
+			actor.SetStage(nil)
 			s.actors = append(s.actors[:i], s.actors[i+1:]...)
 			return
 		}
 	}
-	panic(fmt.Sprintf("failed to remove actor", actor))
+	panic(fmt.Sprintf("Actor not found. %#v", actor))
 }
 
 func (s *Stage) update(dt float64) {
-	// Make a copy because it may be mutated by Update.
-	var actors []Actor
+	// Make a copy to protect from Update mutations.
+	actors := make([]Actor, len(s.actors))
 	copy(actors, s.actors)
 	for _, actor := range actors {
-		if actor.(*BaseActor).stage != nil {
+		if actor.Stage() != nil {
 			actor.Update(dt)
 		}
 	}
@@ -66,11 +67,11 @@ func (s *Stage) update(dt float64) {
 
 func (s *Stage) draw() {
 	// Draw all the Actors.
-	// Make a copy because it may be mutated by Draw (that be would be dumb, but just in case).
-	var actors []Actor
+	// Make a copy to protect from Draw mutations (that be would be dumb, but just in case).
+	actors := make([]Actor, len(s.actors))
 	copy(actors, s.actors)
 	for _, actor := range actors {
-		if actor.(*BaseActor).stage != nil {
+		if actor.Stage() != nil {
 			actor.Draw()
 		}
 	}

@@ -1,5 +1,5 @@
 // TODO:
-// - rotation issue
+// - randomize seed each run
 // - ship respawn
 // - good collision detection
 // - sound effects
@@ -179,7 +179,8 @@ func makeScore(game *Game) Score {
 	s := Score{TextActor: MakeTextActor(pixel.V(0, stage.bounds.Max.Y-30), stage), game: game}
 	s.scale = 2
 	s.horizontalAlignment = "center"
-	game.stage.addActor(&s)
+
+	stage.addActor(&s)
 	return s
 }
 
@@ -207,13 +208,15 @@ func makeShip(game *Game) Ship {
 		rotateSpeed:     5.0,
 		fireCooldown:    0.0}
 	s.game = game
-	stage.addActor(&s)
 	s.scale = 1.5
+
+	stage.addActor(&s)
 	return s
 }
 
 func (s *Ship) Update(dt float64) {
-	win := s.stage.win
+	stage := s.stage
+	win := stage.win
 
 	s.fireCooldown -= dt
 
@@ -236,21 +239,21 @@ func (s *Ship) Update(dt float64) {
 		vector := pixel.Unit(s.rotation + math.Pi/2)
 		position := s.position.Add(vector.Scaled(25))
 		velocity := s.velocity.Add(vector.Scaled(5))
-		makeShot(position, velocity, s.stage, s.game)
+		makeShot(position, velocity, stage, s.game)
 	}
 
+	s.WrapAroundActor.Update(dt)
+
 	// Check for collision with a rock.
-	for _, actor := range s.stage.actors {
+	for _, actor := range stage.actors {
 		if actor.Kind() == "rock" && intersects(s, actor) {
-			s.stage.removeActor(s)
-			s.stage.removeActor(actor)
+			stage.removeActor(s)
+			stage.removeActor(actor)
 
 			// TODO: explode ship, rock
 			break
 		}
 	}
-
-	s.WrapAroundActor.Update(dt)
 }
 
 func (s *Ship) thrust(dt float64) {
@@ -303,7 +306,6 @@ func makeRock(stage *Stage, generation int, parent *Rock) *Rock {
 	rock.position = pixel.V(x, y)
 
 	stage.addActor(&rock)
-
 	return &rock
 }
 
@@ -321,22 +323,26 @@ func makeShot(position pixel.Vec, velocity pixel.Vec, stage *Stage, game *Game) 
 	s.velocity = velocity
 	s.scale = 0.4
 	s.game = game
-	stage.addActor(&s)
 
+	stage.addActor(&s)
 	return &s
 }
 
 func (s *Shot) Update(dt float64) {
+	stage := s.stage
+
 	s.timeout -= dt
 	if s.timeout < 0 {
-		s.stage.removeActor(s)
+		stage.removeActor(s)
+		return
 	}
 
 	// Check for collision with a rock.
-	for _, actor := range s.stage.actors {
+	actors := stage.actors
+	for _, actor := range actors {
 		if intersects(actor, s) && actor.Kind() == "rock" {
-			s.stage.removeActor(s)
-			s.stage.removeActor(actor)
+			stage.removeActor(s)
+			stage.removeActor(actor)
 
 			rock := actor.(*Rock)
 
@@ -347,10 +353,11 @@ func (s *Shot) Update(dt float64) {
 
 			// Create two smaller rocks.
 			if rock.generation < 3 {
+				var newRock *Rock
 				for i := 0; i < 2; i++ {
-					newRock := makeRock(s.stage, rock.generation+1, rock)
+					fmt.Println("makeRock", i)
+					newRock = makeRock(stage, rock.generation+1, rock)
 					newRock.position = actor.Position()
-					s.stage.addActor(newRock)
 				}
 			}
 			break

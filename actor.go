@@ -11,19 +11,30 @@ import (
 //
 
 type Actor interface {
+	// Meant to be overridden.
 	Update(dt float64)
 	Draw()
-	Position() pixel.Vec
+
+	// Also sometimes useful to override.
 	Bounds() pixel.Rect
 	ScaledBounds() pixel.Rect
+	// TODO: CollisionPolygon?
+
+	// Needed by Stage.
+	Id() int
 	Kind() string
+	Position() pixel.Vec
 	Scale() float64
 	Rotation() float64
 	Transform() pixel.Matrix
-	// TODO: CollisionPolygon?
+
+	// TODO: So Stage can verify Actors are mounted.
+	Stage() *Stage
+	SetStage(staget *Stage)
 }
 
 type BaseActor struct {
+	id               int
 	stage            *Stage
 	kind             string
 	position         pixel.Vec
@@ -35,8 +46,13 @@ type BaseActor struct {
 	// layer int
 }
 
+var nextId = 1
+
 func MakeBaseActor(stage *Stage, kind string) BaseActor {
+	id := nextId
+	nextId++
 	return BaseActor{
+		id:               id,
 		stage:            stage,
 		scale:            1,
 		position:         pixel.ZV,
@@ -44,6 +60,20 @@ func MakeBaseActor(stage *Stage, kind string) BaseActor {
 		velocity:         pixel.ZV,
 		rotationVelocity: 0.0,
 		kind:             kind}
+}
+
+func (a *BaseActor) Id() int {
+	return a.id
+}
+
+// TODO: here because I couldn't figure out how to actor.(*BaseActor).stage
+func (a *BaseActor) Stage() *Stage {
+	return a.stage
+}
+
+// TODO: sucks to have to expose this
+func (a *BaseActor) SetStage(stage *Stage) {
+	a.stage = stage
 }
 
 func (a *BaseActor) Kind() string {
@@ -81,6 +111,7 @@ func (a *BaseActor) Update(dt float64) {
 }
 
 func (a *BaseActor) Draw() {
+	// This space intentially left blank.
 }
 
 type SpriteActor struct {
@@ -89,11 +120,10 @@ type SpriteActor struct {
 }
 
 func MakeSpriteActor(frame int, stage *Stage, kind string) SpriteActor {
-	a := SpriteActor{
+	return SpriteActor{
 		sprite:    pixel.NewSprite(stage.spritesheet, stage.frames[frame]),
 		BaseActor: MakeBaseActor(stage, kind),
 	}
-	return a
 }
 
 func (a *SpriteActor) Bounds() pixel.Rect {
@@ -181,7 +211,7 @@ func intersects(a Actor, b Actor) bool {
 
 type Rect pixel.Rect
 
-func (r Rect) Scaled(scale float64) pixel.Rect {
+func (r *Rect) Scaled(scale float64) pixel.Rect {
 	return pixel.Rect{Min: r.Min.Scaled(scale), Max: r.Max.Scaled(scale)}
 }
 
