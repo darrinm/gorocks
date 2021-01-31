@@ -257,19 +257,19 @@ func (s *Ship) Update(dt float64) {
 
 	s.fireCooldown -= dt
 
-	if win.Pressed(pixelgl.KeyA) {
+	if win.Pressed(pixelgl.KeyA) || win.Pressed(pixelgl.KeyLeft) {
 		s.rotateLeft(dt)
 	}
 
-	if win.Pressed(pixelgl.KeyD) {
+	if win.Pressed(pixelgl.KeyD) || win.Pressed(pixelgl.KeyRight) {
 		s.rotateRight(dt)
 	}
 
-	if win.Pressed(pixelgl.KeyW) {
+	if win.Pressed(pixelgl.KeyW) || win.Pressed(pixelgl.KeyUp) {
 		s.thrust(dt)
 	}
 
-	if s.fireCooldown <= 0.0 && win.Pressed(pixelgl.KeyS) || win.Pressed(pixelgl.KeySpace) {
+	if s.fireCooldown <= 0.0 && (win.Pressed(pixelgl.KeyS) || win.Pressed(pixelgl.KeyDown) || win.Pressed(pixelgl.KeySpace)) {
 		// Limit the firing rate.
 		s.fireCooldown = 0.1
 
