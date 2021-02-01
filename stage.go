@@ -21,6 +21,8 @@ type Stage struct {
 	frames           []pixel.Rect
 	imd              *imdraw.IMDraw
 	textAtlas        *text.Atlas
+
+	drawActorBounds bool
 }
 
 // MakeStage creates and initializes a Stage object.
@@ -100,7 +102,7 @@ func (s *Stage) Draw() {
 	s.imd.Clear()
 
 	// Draw bounding boxes of all actors.
-	if false {
+	if s.drawActorBounds {
 		for _, actor := range s.actors {
 			polygon := polygonFromRect(actor.Bounds())
 			transform := actor.Transform()

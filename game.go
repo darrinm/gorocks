@@ -20,10 +20,12 @@ type Game struct {
 	mediumRockPoints int
 	smallRockPoints  int
 	numberOfLives    int
+	heldKeys         map[pixelgl.Button]bool
 }
 
 func makeGame(stage *Stage) *Game {
-	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfLives: 4}
+	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfLives: 4,
+		heldKeys: make(map[pixelgl.Button]bool)}
 	g.reset()
 
 	// We must return a pointer to Game now that it has been initialized with Actors that reference it.
@@ -54,7 +56,23 @@ func (g *Game) update(dt float64) {
 
 	// Press r to reset the game.
 	if stage.win.Pressed(pixelgl.KeyR) {
-		g.reset()
+		if !g.heldKeys[pixelgl.KeyR] {
+			g.heldKeys[pixelgl.KeyR] = true
+			g.reset()
+		}
+	} else {
+		g.heldKeys[pixelgl.KeyR] = false
+	}
+
+	// Press b to toggle Actor bounds drawing.
+	if stage.win.Pressed(pixelgl.KeyB) {
+		if !g.heldKeys[pixelgl.KeyB] {
+			g.heldKeys[pixelgl.KeyB] = true
+
+			g.stage.drawActorBounds = !g.stage.drawActorBounds
+		}
+	} else {
+		g.heldKeys[pixelgl.KeyB] = false
 	}
 
 	// If the ship has been destroyed spawn a new one until all are gone.
