@@ -9,20 +9,21 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
+// Game is the root of all game state and implements the game logic.
 type Game struct {
 	stage *Stage
 	level int
-	ships int
+	lives int
 	score int
 
 	largeRockPoints  int
 	mediumRockPoints int
 	smallRockPoints  int
-	numberOfShips    int
+	numberOfLives    int
 }
 
 func makeGame(stage *Stage) *Game {
-	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfShips: 4}
+	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfLives: 4}
 	g.reset()
 
 	// We must return a pointer to Game now that it has been initialized with Actors that reference it.
@@ -33,7 +34,7 @@ func makeGame(stage *Stage) *Game {
 func (g *Game) reset() {
 	g.stage.Reset()
 
-	g.ships = g.numberOfShips
+	g.lives = g.numberOfLives
 	g.score = 0
 
 	makeScore(g)
@@ -58,8 +59,8 @@ func (g *Game) update(dt float64) {
 
 	// If the ship has been destroyed spawn a new one until all are gone.
 	if stage.FindActorsByKind("ship") == nil {
-		g.ships--
-		if g.ships > 0 {
+		g.lives--
+		if g.lives > 0 {
 			// TODO: wait for the area near the ship to be clear before spawning
 			makeShip(g)
 		} else {
@@ -80,8 +81,7 @@ func (g *Game) update(dt float64) {
 	stage.Draw()
 }
 
-//
-
+// WrapAroundActor upgrades SpriteActors to wrap around screen edges when they move off them.
 type WrapAroundActor struct {
 	SpriteActor
 }
@@ -90,6 +90,7 @@ func makeWrapAroundActor(frame int, stage *Stage, kind string) WrapAroundActor {
 	return WrapAroundActor{SpriteActor: MakeSpriteActor(frame, stage, kind)}
 }
 
+// Update brings the Actor back on the opposite side of the screen from where it exited.
 func (a *WrapAroundActor) Update(dt float64) {
 	a.BaseActor.Update(dt)
 	wrapAroundVec(&a.position, &a.stage.bounds)
@@ -100,8 +101,7 @@ func (a *WrapAroundActor) Draw() {
 }
 */
 
-//
-
+// Score displays the current game score.
 type Score struct {
 	TextActor
 	game *Game // TODO: retain game instead of stage in all actors?
@@ -117,13 +117,13 @@ func makeScore(game *Game) *Score {
 	return &s
 }
 
+// Update the Score's TextActor with the current game score.
 func (a *Score) Update(dt float64) {
 	a.SetText(fmt.Sprintf("%v", a.game.score))
 	a.TextActor.Update(dt)
 }
 
-//
-
+// Lives displays how many lives the player has left.
 type Lives struct {
 	BaseActor
 	game *Game
@@ -138,19 +138,20 @@ func makeLives(game *Game) *Lives {
 	return &l
 }
 
+// Draw a representation of the number of lives the player currently has.
 func (a *Lives) Draw() {
+	// Reuse the sprite the Ship object has.
 	ships := a.stage.FindActorsByKind("ship")
 	if len(ships) == 0 {
 		return
 	}
 	ship := ships[0].(*Ship)
-	for i := 0; i < a.game.ships; i++ {
+	for i := 0; i < a.game.lives; i++ {
 		ship.sprite.Draw(a.stage.win, a.Transform().Moved(pixel.V(float64(i)*30.0, 0)))
 	}
 }
 
-//
-
+// Ship is the hero. It handles the UI for the player ship.
 type Ship struct {
 	WrapAroundActor
 	game         *Game
@@ -174,6 +175,8 @@ func makeShip(game *Game) *Ship {
 	return &s
 }
 
+// Update responds to player input for moving and firing.
+// It also handles collision detection and response.
 func (s *Ship) Update(dt float64) {
 	stage := s.stage
 	win := stage.win
@@ -228,8 +231,7 @@ func (s *Ship) rotateRight(dt float64) {
 	s.rotation -= s.rotateSpeed * dt
 }
 
-//
-
+// Rock is the primary antagonist.
 type Rock struct {
 	WrapAroundActor
 	generation int
@@ -269,8 +271,7 @@ func makeRock(stage *Stage, generation int, parent *Rock) *Rock {
 	return &rock
 }
 
-//
-
+// Shot is the ship's shot. It handles collision detection and response.
 type Shot struct {
 	WrapAroundActor
 	game    *Game
@@ -287,6 +288,7 @@ func makeShot(position pixel.Vec, velocity pixel.Vec, stage *Stage, game *Game) 
 	return &s
 }
 
+// Update handles shot-rock collision detection and response.
 func (s *Shot) Update(dt float64) {
 	game := s.game
 	stage := s.stage
