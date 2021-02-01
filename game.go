@@ -51,7 +51,7 @@ func (g *Game) reset() {
 func (g *Game) newLevel(level int) {
 	g.level = level
 	for i := 0; i < level; i++ {
-		makeRock(g.stage, 1, nil)
+		makeRock(g, 1, nil)
 	}
 }
 
@@ -79,7 +79,7 @@ func (g *Game) update(dt float64) {
 		g.heldKeys[pixelgl.KeyB] = false
 	}
 
-	//
+	// Press p to add 1,000 points to the score.
 	if stage.win.Pressed(pixelgl.KeyP) {
 		if !g.heldKeys[pixelgl.KeyP] {
 			g.heldKeys[pixelgl.KeyP] = true
@@ -251,9 +251,11 @@ func (s *Ship) Update(dt float64) {
 	for _, actor := range stage.actors {
 		if actor.Kind() == "rock" && intersects(s, actor) {
 			stage.RemoveActor(s)
-			stage.RemoveActor(actor)
 
-			// TODO: explode ship, rock
+			// TODO: explode ship
+
+			rock := actor.(*Rock)
+			rock.subdivide()
 			break
 		}
 	}
@@ -275,11 +277,13 @@ func (s *Ship) rotateRight(dt float64) {
 type Rock struct {
 	WrapAroundActor
 	generation int
+	game       *Game
 }
 
-func makeRock(stage *Stage, generation int, parent *Rock) *Rock {
+func makeRock(game *Game, generation int, parent *Rock) *Rock {
+	stage := game.stage
 	frame := rand.Intn(8)
-	rock := Rock{WrapAroundActor: makeWrapAroundActor(frame, stage, "rock"), generation: generation}
+	rock := Rock{WrapAroundActor: makeWrapAroundActor(frame, stage, "rock"), generation: generation, game: game}
 	if parent != nil {
 		// TODO: something better
 		picture := rock.SpriteActor.sprite.Picture()
@@ -311,6 +315,26 @@ func makeRock(stage *Stage, generation int, parent *Rock) *Rock {
 	return &rock
 }
 
+func (r *Rock) subdivide() {
+	game := r.game
+	stage := r.stage
+
+	points := []int{game.largeRockPoints, game.mediumRockPoints, game.smallRockPoints}
+	game.score += points[r.generation-1]
+
+	stage.RemoveActor(r)
+
+	// TODO: explode rock
+
+	// Create two smaller rocks.
+	if r.generation < 3 {
+		for i := 0; i < 2; i++ {
+			newRock := makeRock(game, r.generation+1, r)
+			newRock.position = r.Position()
+		}
+	}
+}
+
 // Shot is the ship's shot. It handles collision detection and response.
 type Shot struct {
 	WrapAroundActor
@@ -331,7 +355,6 @@ func makeShot(position pixel.Vec, velocity pixel.Vec, stage *Stage, game *Game) 
 
 // Update handles shot-rock collision detection and response.
 func (s *Shot) Update(dt float64) {
-	game := s.game
 	stage := s.stage
 
 	s.timeout -= dt
@@ -346,22 +369,10 @@ func (s *Shot) Update(dt float64) {
 	actors := stage.actors
 	for _, actor := range actors {
 		if actor.Kind() == "rock" && intersects(actor, s) {
-			rock := actor.(*Rock)
-			points := []int{game.largeRockPoints, game.mediumRockPoints, game.smallRockPoints}
-			game.score += points[rock.generation-1]
-
 			stage.RemoveActor(s)
-			stage.RemoveActor(actor)
 
-			// TODO: explode rock
-
-			// Create two smaller rocks.
-			if rock.generation < 3 {
-				for i := 0; i < 2; i++ {
-					newRock := makeRock(stage, rock.generation+1, rock)
-					newRock.position = actor.Position()
-				}
-			}
+			rock := actor.(*Rock)
+			rock.subdivide()
 			break
 		}
 	}
