@@ -301,6 +301,7 @@ func makeShot(position pixel.Vec, velocity pixel.Vec, stage *Stage, game *Game) 
 	s.position = position
 	s.velocity = velocity
 	s.scale = 0.4
+	s.rotation = velocity.Angle()
 
 	stage.AddActor(&s)
 	return &s
