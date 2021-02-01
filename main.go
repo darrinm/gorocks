@@ -1,6 +1,5 @@
 // TODO:
 // - game over
-// - randomize seed each run
 // - ship deceleration
 // - good collision detection
 // - sound effects

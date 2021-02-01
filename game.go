@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -27,6 +28,9 @@ type Game struct {
 }
 
 func makeGame(stage *Stage) *Game {
+	// Get fresh random numbers every run.
+	rand.Seed(time.Now().Unix())
+
 	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, newShipPoints: 10000,
 		numberOfLives: 4,
 		heldKeys:      make(map[pixelgl.Button]bool)}
