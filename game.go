@@ -20,12 +20,16 @@ type Game struct {
 	mediumRockPoints int
 	smallRockPoints  int
 	numberOfLives    int
-	heldKeys         map[pixelgl.Button]bool
+	newShipPoints    int
+
+	heldKeys      map[pixelgl.Button]bool
+	previousScore int
 }
 
 func makeGame(stage *Stage) *Game {
-	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, numberOfLives: 4,
-		heldKeys: make(map[pixelgl.Button]bool)}
+	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, newShipPoints: 10000,
+		numberOfLives: 4,
+		heldKeys:      make(map[pixelgl.Button]bool)}
 	g.reset()
 
 	// We must return a pointer to Game now that it has been initialized with Actors that reference it.
@@ -75,6 +79,17 @@ func (g *Game) update(dt float64) {
 		g.heldKeys[pixelgl.KeyB] = false
 	}
 
+	//
+	if stage.win.Pressed(pixelgl.KeyP) {
+		if !g.heldKeys[pixelgl.KeyP] {
+			g.heldKeys[pixelgl.KeyP] = true
+
+			g.score += 1000
+		}
+	} else {
+		g.heldKeys[pixelgl.KeyP] = false
+	}
+
 	// If the ship has been destroyed spawn a new one until all are gone.
 	if stage.FindActorsByKind("ship") == nil {
 		g.lives--
@@ -91,6 +106,13 @@ func (g *Game) update(dt float64) {
 	if stage.FindActorsByKind("rock") == nil {
 		g.newLevel(g.level + 1)
 	}
+
+	// If the player has crossed a scoring threshold give them another ship.
+	if g.previousScore%g.newShipPoints > g.score%g.newShipPoints {
+		g.lives++
+	}
+
+	g.previousScore = g.score
 
 	// Give every actor a chance to update.
 	stage.Update(dt)

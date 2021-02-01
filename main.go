@@ -1,6 +1,5 @@
 // TODO:
 // - game over
-// - extra ship every 10,000
 // - randomize seed each run
 // - ship deceleration
 // - good collision detection
