@@ -23,11 +23,15 @@ type Stage struct {
 	textAtlas        *text.Atlas
 
 	drawActorBounds bool
+	actorIDs        map[Actor]int
+	nextActorID     int
 }
 
 // MakeStage creates and initializes a Stage object.
 func MakeStage(stage Stage) Stage {
 	s := stage
+	s.actorIDs = make(map[Actor]int)
+	s.nextActorID = 1 // ActorID 0 is reserved (means "not on the actors list")
 	s.imd = imdraw.New(nil)
 	s.textAtlas = text.NewAtlas(basicfont.Face7x13, text.ASCII)
 	return s
@@ -40,25 +44,28 @@ func (s *Stage) Reset() {
 
 // AddActor adds the specified Actor to the Stage.
 func (s *Stage) AddActor(actor Actor) {
-	for _, a := range s.actors {
-		if actor.ID() == a.ID() {
-			panic(fmt.Sprintf("Actor has already been added. %#v", actor))
-		}
+	if s.actorIDs[actor] != 0 {
+		panic(fmt.Sprintf("Actor has already been added. %#v", actor))
 	}
 	s.actors = append(s.actors, actor)
+	s.actorIDs[actor] = s.nextActorID
+	s.nextActorID++
 }
 
 // RemoveActor removes the specified Actor from the Stage.
 func (s *Stage) RemoveActor(actor Actor) {
+	actorID := s.actorIDs[actor]
+	if actorID == 0 {
+		panic(fmt.Sprintf("Actor not found. %#v", actor))
+	}
+
 	for i, actorT := range s.actors {
-		// Compare pointers, not values.
-		if actorT.ID() == actor.ID() {
-			actor.SetStage(nil)
+		if s.actorIDs[actorT] == actorID {
+			delete(s.actorIDs, actor)
 			s.actors = append(s.actors[:i], s.actors[i+1:]...)
 			return
 		}
 	}
-	panic(fmt.Sprintf("Actor not found. %#v", actor))
 }
 
 // FindActorsByKind returns an array of all Actors matching the requested 'kind', or nil if none.
@@ -81,7 +88,7 @@ func (s *Stage) Update(dt float64) {
 	actors := make([]Actor, len(s.actors))
 	copy(actors, s.actors)
 	for _, actor := range actors {
-		if actor.Stage() != nil {
+		if s.actorIDs[actor] != 0 {
 			actor.Update(dt)
 		}
 	}
@@ -94,7 +101,7 @@ func (s *Stage) Draw() {
 	actors := make([]Actor, len(s.actors))
 	copy(actors, s.actors)
 	for _, actor := range actors {
-		if actor.Stage() != nil {
+		if s.actorIDs[actor] != 0 {
 			actor.Draw()
 		}
 	}

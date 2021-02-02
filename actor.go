@@ -22,22 +22,16 @@ type Actor interface {
 	// TODO: CollisionPolygon?
 
 	// Needed by Stage.
-	ID() int
 	Kind() string
 	Position() pixel.Vec
 	Scale() float64
 	Rotation() float64
 	Transform() pixel.Matrix
-
-	// TODO: So Stage can verify Actors are mounted.
-	Stage() *Stage
-	SetStage(staget *Stage)
 }
 
 // BaseActor implements Actor and is expected to embedded in richer Actors.
 // Its Update and Draw methods don't do anything.
 type BaseActor struct {
-	id               int
 	stage            *Stage
 	kind             string
 	position         pixel.Vec
@@ -52,10 +46,7 @@ type BaseActor struct {
 var nextID = 1
 
 func MakeBaseActor(stage *Stage, kind string) BaseActor {
-	ID := nextID
-	nextID++
 	return BaseActor{
-		id:               ID,
 		stage:            stage,
 		scale:            1,
 		position:         pixel.ZV,
@@ -63,20 +54,6 @@ func MakeBaseActor(stage *Stage, kind string) BaseActor {
 		velocity:         pixel.ZV,
 		rotationVelocity: 0.0,
 		kind:             kind}
-}
-
-func (a *BaseActor) ID() int {
-	return a.id
-}
-
-// TODO: here because I couldn't figure out how to actor.(*BaseActor).stage
-func (a *BaseActor) Stage() *Stage {
-	return a.stage
-}
-
-// TODO: sucks to have to expose this
-func (a *BaseActor) SetStage(stage *Stage) {
-	a.stage = stage
 }
 
 func (a *BaseActor) Kind() string {
