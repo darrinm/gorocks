@@ -31,9 +31,9 @@ func makeGame(stage *Stage) *Game {
 	// Get fresh random numbers every run.
 	rand.Seed(time.Now().Unix())
 
-	g := Game{stage: stage, largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, newShipPoints: 10000,
-		numberOfLives: 4,
-		heldKeys:      make(map[pixelgl.Button]bool)}
+	g := Game{stage: stage, heldKeys: make(map[pixelgl.Button]bool),
+		largeRockPoints: 20, mediumRockPoints: 50, smallRockPoints: 100, newShipPoints: 10000, numberOfLives: 4,
+	}
 	g.reset()
 
 	// We must return a pointer to Game now that it has been initialized with Actors that reference it.
@@ -204,7 +204,6 @@ type Ship struct {
 	fireCooldown float64
 }
 
-// TODO: why is it oriented to the right?
 func makeShip(game *Game) *Ship {
 	stage := game.stage
 	s := Ship{
