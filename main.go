@@ -1,4 +1,5 @@
 // TODO:
+// - fix unthrottled frame rate on Linux
 // - game over
 // - ship deceleration
 // - good collision detection
@@ -9,6 +10,7 @@
 // - smaller = faster
 // - timing variability
 // - explosions
+// - safe spawning
 
 package main
 
